@@ -1,0 +1,95 @@
+{
+  "name": "gitdb",
+  "version": "2.0.0",
+  "description": "A powerful, flexible database module for storing data in various formats with local file and GitHub storage options",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest tests/unit",
+    "test:integration": "jest tests/integration",
+    "test:performance": "jest tests/performance",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
+    "example": "node examples/basic-usage.js",
+    "example:advanced": "node examples/advanced-filtering.js",
+    "example:formats": "node examples/format-examples.js",
+    "example:github": "node examples/github-storage.js",
+    "build": "echo 'No build step required for Node.js module'",
+    "prepublishOnly": "npm test && npm run lint"
+  },
+  "keywords": [
+    "database",
+    "git",
+    "github",
+    "json",
+    "csv",
+    "yaml",
+    "xml",
+    "storage",
+    "version-control",
+    "file-database",
+    "no-sql",
+    "document-store"
+  ],
+  "author": "Your Name <your.email@example.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/gitdb.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/gitdb/issues"
+  },
+  "homepage": "https://github.com/yourusername/gitdb#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "@octokit/rest": "^19.0.0",
+    "js-yaml": "^4.1.0",
+    "csv-parser": "^3.0.0",
+    "csv-stringify": "^6.0.0",
+    "xml2js": "^0.5.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-jest": "^27.0.0"
+  },
+  "peerDependencies": {
+    "js-yaml": "^4.1.0",
+    "csv-parser": "^3.0.0",
+    "csv-stringify": "^6.0.0",
+    "xml2js": "^0.5.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/index.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.js"
+    ]
+  },
+  "eslintConfig": {
+    "extends": "standard",
+    "plugins": ["jest"],
+    "env": {
+      "jest": true,
+      "node": true
+    }
+  }
+} 
