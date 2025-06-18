@@ -21,4 +21,5 @@ module.exports.XMLFormat = require('./formats/XMLFormat');
 module.exports.LockManager = require('./utils/LockManager').LockManager;
 module.exports.EncryptionManager = require('./utils/EncryptionManager').EncryptionManager;
 module.exports.BackupManager = require('./utils/BackupManager').BackupManager;
-module.exports.ValidationManager = require('./utils/ValidationManager').ValidationManager; 
+module.exports.ValidationManager = require('./utils/ValidationManager').ValidationManager;
+module.exports.HistoryManager = require('./utils/HistoryManager'); 

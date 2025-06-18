@@ -14,6 +14,11 @@ A powerful, flexible database module for storing data in various formats (JSON, 
 - **Data Integrity**: Checksums and validation
 - **Format Conversion**: Convert between different data formats
 - **Statistics**: Database analytics and performance metrics
+- **Version History**: Complete commit history tracking (GitHub storage)
+- **Record History**: Track changes to individual records over time
+- **Field History**: Monitor changes to specific fields in records
+- **History Search**: Search and filter commit history by various criteria
+- **Revert Capability**: Rollback to any previous commit
 
 ## Installation
 
@@ -734,6 +739,225 @@ const highPaidEngineers = await fetchUsers({
   fields: ['name', 'salary', 'department']
 });
 ```
+
+## History Tracking (GitHub Storage Only)
+
+GitDB provides comprehensive version history tracking when using GitHub storage. This allows you to track every change to your data, including who made the change, when it was made, and what exactly changed.
+
+### Prerequisites
+
+History tracking is only available with GitHub storage. Make sure you have:
+- GitHub Personal Access Token with `repo` scope
+- Data stored in a GitHub repository
+
+### Basic History Operations
+
+#### Get Commit History
+```javascript
+// Get the last 50 commits
+const commits = await db.getCommitHistory(50);
+
+commits.forEach(commit => {
+  console.log(`${commit.message} by ${commit.author.name} on ${commit.date}`);
+});
+```
+
+#### Get Record History
+```javascript
+// Track changes to a specific record
+const recordHistory = await db.getRecordHistory('users', 'user-123', 20);
+
+recordHistory.forEach(entry => {
+  console.log(`${entry.action}: ${entry.message} by ${entry.author.name}`);
+  console.log(`Record:`, entry.record);
+});
+```
+
+#### Get Field History
+```javascript
+// Track changes to a specific field
+const salaryHistory = await db.getFieldHistory('users', 'user-123', 'salary', 10);
+
+salaryHistory.forEach(entry => {
+  console.log(`Salary: $${entry.fieldValue} (${entry.action}) - ${entry.message}`);
+});
+```
+
+### Advanced History Features
+
+#### Search History
+```javascript
+// Search by author
+const authorCommits = await db.searchHistory({ 
+  author: 'john.doe@example.com' 
+});
+
+// Search by date range
+const dateRangeCommits = await db.searchHistory({
+  since: '2024-01-01T00:00:00Z',
+  until: '2024-12-31T23:59:59Z'
+});
+
+// Search by commit message
+const messageCommits = await db.searchHistory({
+  message: 'update user'
+});
+```
+
+#### Get History Statistics
+```javascript
+const stats = await db.getHistoryStats();
+
+console.log(`Total commits: ${stats.totalCommits}`);
+console.log(`Authors: ${stats.authors.join(', ')}`);
+console.log(`Average commits per day: ${stats.averageCommitsPerDay}`);
+console.log(`First commit: ${stats.firstCommit.message}`);
+console.log(`Last commit: ${stats.lastCommit.message}`);
+```
+
+#### Get Collection Timeline
+```javascript
+// Track how a collection has grown over time
+const timeline = await db.getCollectionTimeline('users', 50);
+
+timeline.forEach(entry => {
+  console.log(`${entry.recordCount} users - ${entry.message} (${entry.author.name})`);
+});
+```
+
+#### Compare Versions
+```javascript
+// Get the difference between two commits
+const diff = await db.getDiff('abc123', 'def456');
+
+console.log(`Commits ahead: ${diff.ahead_by}`);
+console.log(`Commits behind: ${diff.behind_by}`);
+console.log(`Files changed: ${diff.files.length}`);
+
+diff.files.forEach(file => {
+  console.log(`${file.filename}: ${file.status} (+${file.additions} -${file.deletions})`);
+});
+```
+
+#### Get File at Specific Commit
+```javascript
+// Get the data file content at a specific commit
+const fileData = await db.getFileAtCommit('abc123');
+
+console.log(`File size: ${fileData.size} bytes`);
+const data = JSON.parse(fileData.content);
+console.log('Data at that commit:', data);
+```
+
+#### Get Commit Changes
+```javascript
+// Get all changes made in a specific commit
+const changes = await db.getCommitChanges('abc123');
+
+console.log('Added:', changes.added);
+console.log('Modified:', changes.modified);
+console.log('Deleted:', changes.deleted);
+```
+
+### Revert Operations
+
+#### Revert to Previous Commit
+```javascript
+// Revert the entire database to a previous state
+const result = await db.revertToCommit('abc123', 'Revert to stable version');
+
+console.log(`Reverted to commit: ${result.revertedTo}`);
+console.log(`Message: ${result.message}`);
+```
+
+### History API Endpoints
+
+You can easily create REST API endpoints for history tracking:
+
+```javascript
+const express = require('express');
+const app = express();
+
+// Get commit history
+app.get('/api/history/commits', async (req, res) => {
+  const limit = parseInt(req.query.limit) || 50;
+  const commits = await db.getCommitHistory(limit);
+  res.json(commits);
+});
+
+// Get record history
+app.get('/api/history/record/:collection/:id', async (req, res) => {
+  const { collection, id } = req.params;
+  const limit = parseInt(req.query.limit) || 50;
+  const history = await db.getRecordHistory(collection, id, limit);
+  res.json(history);
+});
+
+// Get field history
+app.get('/api/history/field/:collection/:id/:field', async (req, res) => {
+  const { collection, id, field } = req.params;
+  const limit = parseInt(req.query.limit) || 50;
+  const history = await db.getFieldHistory(collection, id, field, limit);
+  res.json(history);
+});
+
+// Search history
+app.get('/api/history/search', async (req, res) => {
+  const { author, since, until, message } = req.query;
+  const results = await db.searchHistory({ author, since, until, message });
+  res.json(results);
+});
+
+// Revert to commit
+app.post('/api/history/revert/:sha', async (req, res) => {
+  const { sha } = req.params;
+  const { message } = req.body;
+  const result = await db.revertToCommit(sha, message);
+  res.json(result);
+});
+```
+
+### History Tracking Use Cases
+
+#### Audit Trails
+```javascript
+// Track all changes to sensitive data
+const auditTrail = await db.getRecordHistory('employees', 'emp-123', 100);
+const salaryChanges = auditTrail.filter(entry => 
+  entry.action === 'updated' && entry.record.salary !== entry.previousRecord?.salary
+);
+```
+
+#### Data Recovery
+```javascript
+// Find when data was accidentally deleted
+const recordHistory = await db.getRecordHistory('users', 'user-456', 50);
+const deletionCommit = recordHistory.find(entry => entry.action === 'deleted');
+
+if (deletionCommit) {
+  // Revert to the commit before deletion
+  await db.revertToCommit(deletionCommit.commit, 'Recover deleted user');
+}
+```
+
+#### Change Analysis
+```javascript
+// Analyze how a field has changed over time
+const fieldHistory = await db.getFieldHistory('products', 'prod-789', 'price', 50);
+const priceChanges = fieldHistory.filter(entry => entry.action === 'updated');
+
+console.log('Price change history:');
+priceChanges.forEach(change => {
+  console.log(`${change.date}: $${change.previousValue} → $${change.fieldValue}`);
+});
+```
+
+### Performance Considerations
+
+- **API Rate Limits**: GitHub API has rate limits (5,000 requests/hour for authenticated users)
+- **Large Histories**: For repositories with many commits, consider limiting the number of commits retrieved
+- **Caching**: Consider caching frequently accessed history data
+- **Batch Operations**: Use bulk operations to reduce the number of commits
 
 ## Security Features
 

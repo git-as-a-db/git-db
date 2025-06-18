@@ -9,6 +9,7 @@ const { LockManager } = require('../utils/LockManager');
 const { EncryptionManager } = require('../utils/EncryptionManager');
 const { BackupManager } = require('../utils/BackupManager');
 const { ValidationManager } = require('../utils/ValidationManager');
+const HistoryManager = require('../utils/HistoryManager');
 
 class GitDB {
   constructor(options = {}) {
@@ -23,6 +24,9 @@ class GitDB {
     this.encryptionManager = new EncryptionManager(options);
     this.backupManager = new BackupManager(options);
     this.validationManager = new ValidationManager(options);
+    
+    // History manager (only for GitHub storage)
+    this.historyManager = null;
     
     // Performance tracking
     this.metrics = {
@@ -51,6 +55,11 @@ class GitDB {
       // Set storage reference for backup manager
       this.backupManager.setStorage(this.storage);
       await this.backupManager.initialize();
+      
+      // Initialize history manager for GitHub storage
+      if (this.storageType === 'github' && this.storage.storage && this.storage.storage.octokit) {
+        this.historyManager = new HistoryManager(this.storage.storage);
+      }
       
       return true;
     } catch (error) {
@@ -992,6 +1001,183 @@ class GitDB {
       ...this.backupManager.getConfig(),
       cacheTimeout: this.cacheTimeout
     };
+  }
+
+  // ===== HISTORY METHODS (GitHub Storage Only) =====
+
+  /**
+   * Check if history tracking is available
+   */
+  hasHistoryTracking() {
+    return this.historyManager !== null;
+  }
+
+  /**
+   * Get complete commit history for the data file
+   */
+  async getCommitHistory(limit = 50) {
+    if (!this.hasHistoryTracking()) {
+      throw new Error('History tracking is only available for GitHub storage');
+    }
+    return await this.historyManager.getFileHistory(limit);
+  }
+
+  /**
+   * Get the content of the data file at a specific commit
+   */
+  async getFileAtCommit(sha) {
+    if (!this.hasHistoryTracking()) {
+      throw new Error('History tracking is only available for GitHub storage');
+    }
+    return await this.historyManager.getFileAtCommit(sha);
+  }
+
+  /**
+   * Get the difference between two commits
+   */
+  async getDiff(sha1, sha2) {
+    if (!this.hasHistoryTracking()) {
+      throw new Error('History tracking is only available for GitHub storage');
+    }
+    return await this.historyManager.getDiff(sha1, sha2);
+  }
+
+  /**
+   * Get the history of a specific record by ID
+   */
+  async getRecordHistory(collection, recordId, limit = 50) {
+    if (!this.hasHistoryTracking()) {
+      throw new Error('History tracking is only available for GitHub storage');
+    }
+    return await this.historyManager.getRecordHistory(collection, recordId, limit);
+  }
+
+  /**
+   * Search commit history by various criteria
+   */
+  async searchHistory(options = {}) {
+    if (!this.hasHistoryTracking()) {
+      throw new Error('History tracking is only available for GitHub storage');
+    }
+    return await this.historyManager.searchHistory(options);
+  }
+
+  /**
+   * Get statistics about the data file history
+   */
+  async getHistoryStats() {
+    if (!this.hasHistoryTracking()) {
+      throw new Error('History tracking is only available for GitHub storage');
+    }
+    return await this.historyManager.getHistoryStats();
+  }
+
+  /**
+   * Get the timeline of changes for a collection
+   */
+  async getCollectionTimeline(collection, limit = 50) {
+    if (!this.hasHistoryTracking()) {
+      throw new Error('History tracking is only available for GitHub storage');
+    }
+    return await this.historyManager.getCollectionTimeline(collection, limit);
+  }
+
+  /**
+   * Revert the data file to a specific commit
+   */
+  async revertToCommit(sha, commitMessage = null) {
+    if (!this.hasHistoryTracking()) {
+      throw new Error('History tracking is only available for GitHub storage');
+    }
+    
+    const message = commitMessage || `Revert to commit ${sha}`;
+    const result = await this.historyManager.revertToCommit(sha, message);
+    
+    // Clear cache after revert
+    this.cache.clear();
+    
+    return result;
+  }
+
+  /**
+   * Get the version history of a specific field in a record
+   */
+  async getFieldHistory(collection, recordId, fieldName, limit = 50) {
+    if (!this.hasHistoryTracking()) {
+      throw new Error('History tracking is only available for GitHub storage');
+    }
+    
+    const recordHistory = await this.getRecordHistory(collection, recordId, limit);
+    
+    return recordHistory.map(entry => ({
+      commit: entry.commit,
+      message: entry.message,
+      author: entry.author,
+      date: entry.date,
+      action: entry.action,
+      fieldValue: entry.record[fieldName],
+      previousValue: entry.previousRecord ? entry.previousRecord[fieldName] : null
+    }));
+  }
+
+  /**
+   * Get all records that were created, updated, or deleted in a specific commit
+   */
+  async getCommitChanges(sha) {
+    if (!this.hasHistoryTracking()) {
+      throw new Error('History tracking is only available for GitHub storage');
+    }
+    
+    try {
+      const fileData = await this.getFileAtCommit(sha);
+      const data = JSON.parse(fileData.content);
+      
+      // Get the previous commit to compare
+      const commits = await this.getCommitHistory(2);
+      if (commits.length < 2) {
+        return { added: data, modified: {}, deleted: {} };
+      }
+      
+      const previousFileData = await this.getFileAtCommit(commits[1].sha);
+      const previousData = JSON.parse(previousFileData.content);
+      
+      const changes = {
+        added: {},
+        modified: {},
+        deleted: {}
+      };
+      
+      // Compare collections
+      const allCollections = new Set([
+        ...Object.keys(data),
+        ...Object.keys(previousData)
+      ]);
+      
+      for (const collection of allCollections) {
+        const currentItems = data[collection] || [];
+        const previousItems = previousData[collection] || [];
+        
+        const currentIds = new Set(currentItems.map(item => item.id));
+        const previousIds = new Set(previousItems.map(item => item.id));
+        
+        // Find added items
+        changes.added[collection] = currentItems.filter(item => !previousIds.has(item.id));
+        
+        // Find deleted items
+        changes.deleted[collection] = previousItems.filter(item => !currentIds.has(item.id));
+        
+        // Find modified items
+        changes.modified[collection] = currentItems.filter(item => {
+          if (!previousIds.has(item.id)) return false;
+          const previousItem = previousItems.find(p => p.id === item.id);
+          return JSON.stringify(item) !== JSON.stringify(previousItem);
+        });
+      }
+      
+      return changes;
+    } catch (error) {
+      throw new Error(`Failed to get commit changes: ${error.message}`);
+    }
   }
 
   /**
