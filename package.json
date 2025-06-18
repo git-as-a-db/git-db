@@ -3,6 +3,17 @@
   "version": "2.0.0",
   "description": "A powerful, flexible database module for storing data in various formats with local file and GitHub storage options",
   "main": "src/index.js",
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "require": "./src/index.js",
+      "import": "./src/index.js"
+    }
+  },
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
@@ -17,7 +28,8 @@
     "example:formats": "node examples/format-examples.js",
     "example:github": "node examples/github-storage.js",
     "build": "echo 'No build step required for Node.js module'",
-    "prepublishOnly": "npm test && npm run lint"
+    "prepublishOnly": "npm test && npm run lint",
+    "prepack": "npm run test"
   },
   "keywords": [
     "database",
@@ -31,18 +43,26 @@
     "version-control",
     "file-database",
     "no-sql",
-    "document-store"
+    "document-store",
+    "acid",
+    "encryption",
+    "backup",
+    "filtering",
+    "crud",
+    "local-storage",
+    "github-storage",
+    "data-persistence"
   ],
   "author": "Your Name <your.email@example.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/gitdb.git"
+    "url": "https://github.com/git-as-a-db/gitdb.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/gitdb/issues"
+    "url": "https://github.com/git-as-a-db/gitdb/issues"
   },
-  "homepage": "https://github.com/yourusername/gitdb#readme",
+  "homepage": "https://github.com/git-as-a-db/gitdb#readme",
   "engines": {
     "node": ">=14.0.0"
   },

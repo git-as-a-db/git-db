@@ -39,7 +39,7 @@ This document compares the two storage options available in this module:
 #### GitHub Storage
 ```javascript
 // Data stored in GitHub repository
-github.com/yourusername/your-repo/
+github.com/git-as-a-db/your-repo/
 ├── data/
 │   └── database.json      ← Your data
 └── backups/
@@ -64,7 +64,7 @@ const db = new GitJsonDB({
 const GitHubJsonDB = require('./github-json-db');
 
 const db = new GitHubJsonDB({
-  owner: 'your-username',          // GitHub username
+  owner: 'git-as-a-db',          // GitHub username
   repo: 'your-repo',               // Repository name
   path: 'data/database.json',      // File path in repo
   token: process.env.GITHUB_TOKEN, // GitHub token required

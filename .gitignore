@@ -101,8 +101,11 @@ pids
 
 # Data directories (these might contain sensitive or generated data)
 data/
-data-*/
 backups/
+
+# Example data directories
+example-data/
+test-data/
 
 # IDE and editor files
 .vscode/

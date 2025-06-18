@@ -55,7 +55,7 @@ const db = new GitDB({
 const githubDb = new GitDB({
   storageType: 'github',
   format: 'json',
-  owner: 'your-username',
+  owner: 'git-as-a-db',
   repo: 'your-repo',
   token: 'your-github-token',
   path: 'data/database.json'
@@ -92,7 +92,7 @@ const db = new GitDB({
 const db = new GitDB({
   storageType: 'github',
   format: 'json',
-  owner: 'your-username',       // GitHub username
+  owner: 'git-as-a-db',       // GitHub username
   repo: 'your-repo',           // Repository name
   branch: 'main',              // Branch name
   path: 'data/database.json',  // File path in repo
@@ -765,7 +765,7 @@ const localDb = new GitDB({ storageType: 'local' });
 // Create GitHub database
 const githubDb = new GitDB({
   storageType: 'github',
-  owner: 'your-username',
+  owner: 'git-as-a-db',
   repo: 'your-repo',
   token: 'your-token'
 });
@@ -821,7 +821,7 @@ describe('GitDB', () => {
 test('GitHub storage integration', async () => {
   const db = new GitDB({
     storageType: 'github',
-    owner: 'test-user',
+    owner: 'git-as-a-db',
     repo: 'test-repo',
     token: process.env.GITHUB_TOKEN
   });
